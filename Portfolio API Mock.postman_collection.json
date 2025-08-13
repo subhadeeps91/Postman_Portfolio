@@ -1,0 +1,1189 @@
+{
+	"info": {
+		"_postman_id": "e719d0e3-a17a-4a86-9ff4-468f0e26ee98",
+		"name": "Portfolio API Mock",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "46000395",
+		"_collection_link": "https://subhadeepsarkar-2726675.postman.co/workspace/Subhadeep-Sarkar's-Workspace~324fa7b7-a25f-4c85-8b8e-d234c404ecb7/collection/46000395-e719d0e3-a17a-4a86-9ff4-468f0e26ee98?action=share&source=collection_link&creator=46000395"
+	},
+	"item": [
+		{
+			"name": "Auth/Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const res = pm.response.json();\r",
+							"\r",
+							"pm.test(\"Status code is valid\", () => {\r",
+							"    pm.expect([200, 401]).to.include(pm.response.code);\r",
+							"});\r",
+							"\r",
+							"if (pm.response.code === 200) {\r",
+							"    pm.test(\"Login successful\", () => {\r",
+							"        pm.expect(res).to.have.property(\"token\");\r",
+							"        pm.environment.set(\"authToken\", res.token);\r",
+							"    });\r",
+							"} else if (pm.response.code === 401) {\r",
+							"    pm.test(\"Login failed\", () => {\r",
+							"        pm.expect(res).to.have.property(\"error\");\r",
+							"        pm.expect(res.error).to.eql(\"Invalid credentials\");\r",
+							"    });\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-mock-response-name",
+						"value": "{{mockTypeLogin}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n   \"username\": \"{{username}}\",\r\n  \"password\": \"{{password}}\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/auth/login",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "login_success",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"subhadeep\",\r\n  \"password\": \"password\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/auth/login",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": "{ \"token\": \"abc123\", \r\n\"message\": \"Login successful\" }"
+				},
+				{
+					"name": "login_failure",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"username\": \"krittika\",\r\n  \"password\": \"password\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/auth/login",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"status": "Unauthorized",
+					"code": 401,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": "{\r\n  \"status\": \"invalid credentials\",\r\n  \"message\": \"Login failed, please check login data\"\r\n}"
+				}
+			]
+		},
+		{
+			"name": "Details",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const enc = v => encodeURIComponent(pm.iterationData.get(v));\r",
+							"\r",
+							"pm.variables.set(\"mockType\", enc(\"mockType\"));\r",
+							"pm.variables.set(\"fromAccount\", enc(\"fromAccount\"));\r",
+							"pm.variables.set(\"toAccount\", enc(\"toAccount\"));\r",
+							"pm.variables.set(\"amount\", enc(\"amount\"));\r",
+							"pm.variables.set(\"transactionType\", enc(\"transactionType\"));\r",
+							"pm.variables.set(\"geoLocation\", enc(\"geoLocation\"));\r",
+							"pm.variables.set(\"deviceId\", enc(\"deviceId\"));\r",
+							"pm.variables.set(\"requestedAt\", enc(\"requestedAt\"));"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// ===== GET Request Tests – Data Driven from mockType =====\r",
+							"\r",
+							"// Step 1: Get mockType from environment or iteration data\r",
+							"const mockType = pm.environment.get(\"mockType\") || pm.iterationData.get(\"mockType\");\r",
+							"\r",
+							"// Step 2: Map expected status code and text for each mockType\r",
+							"const expectations = {\r",
+							"    success:       { status: 200, bodyCheck: (json) => {\r",
+							"        pm.expect(json).to.have.property(\"accountNumber\");\r",
+							"        pm.expect(json.balance).to.be.a(\"number\");\r",
+							"    }},\r",
+							"    Pending:       { status: 202, bodyCheck: (json) => {\r",
+							"        pm.expect(json).to.have.property(\"message\").that.match(/processing|pending/i);\r",
+							"    }},\r",
+							"    invalid_account: { status: 404, bodyCheck: (json) => {\r",
+							"        pm.expect(json.error).to.match(/account not found/i);\r",
+							"    }},\r",
+							"    insufficient_balance: { status: 402, bodyCheck: (json) => {\r",
+							"        pm.expect(json.error).to.match(/insufficient balance/i);\r",
+							"    }},\r",
+							"    validation_error: { status: 422, bodyCheck: (json) => {\r",
+							"        pm.expect(json.error).to.match(/validation/i);\r",
+							"    }},\r",
+							"    suspicious:    { status: 403, bodyCheck: (json) => {\r",
+							"        pm.expect(json.error).to.match(/suspicious/i);\r",
+							"    }},\r",
+							"    maintenance:   { status: 503, bodyCheck: (json) => {\r",
+							"        pm.expect(json.error).to.match(/maintenance/i);\r",
+							"    }},\r",
+							"    duplicate:     { status: 409, bodyCheck: (json) => {\r",
+							"        pm.expect(json.error).to.match(/duplicate/i);\r",
+							"    }},\r",
+							"    limit_exceed:  { status: 429, bodyCheck: (json) => {\r",
+							"        pm.expect(json.error).to.equal(\"Rate limit exceeded\");\r",
+							"        pm.expect(json.limit).to.be.a(\"number\");\r",
+							"        pm.expect(json.resetIn).to.be.a(\"number\");\r",
+							"        pm.expect(json.code).to.match(/ERR_RATE_LIMIT/i);\r",
+							"    }},\r",
+							"    bad_request:   { status: 400, bodyCheck: (json) => {\r",
+							"        pm.expect(json.error).to.match(/bad request/i);\r",
+							"    }},\r",
+							"    server_error:  { status: 500, bodyCheck: (json) => {\r",
+							"        pm.expect(json.error).to.match(/internal server error/i);\r",
+							"    }},\r",
+							"    forbidden:     { status: 403, bodyCheck: (json) => {\r",
+							"        pm.expect(json.error).to.match(/forbidden/i);\r",
+							"    }},\r",
+							"    not_found:     { status: 404, bodyCheck: (json) => {\r",
+							"        pm.expect(json.error).to.match(/not found/i);\r",
+							"    }}\r",
+							"};\r",
+							"\r",
+							"// Step 3: Sanity check Content-Type\r",
+							"pm.test(\"Content-Type is valid (GET)\", () => {\r",
+							"    const allowedTypes = [\"application/json\", \"text/html\"];\r",
+							"    const contentType = pm.response.headers.get(\"Content-Type\") || \"\";\r",
+							"    pm.expect(allowedTypes.some(t => contentType.includes(t)), `Unexpected Content-Type: ${contentType}`).to.be.true;\r",
+							"});\r",
+							"\r",
+							"// Step 4: Parse JSON safely\r",
+							"let jsonGET = {};\r",
+							"try {\r",
+							"    jsonGET = pm.response.json();\r",
+							"    pm.test(\"Response is valid JSON (GET)\", () => pm.expect(jsonGET).to.be.an(\"object\"));\r",
+							"} catch (e) {\r",
+							"    pm.test(\"Response is valid JSON (GET)\", () => pm.expect.fail(\"Invalid JSON\"));\r",
+							"}\r",
+							"\r",
+							"// Step 5: Assert status and body for this mockType\r",
+							"const exp = expectations[mockType];\r",
+							"\r",
+							"pm.test(`mockType \"${mockType}\" is recognized`, () => {\r",
+							"    pm.expect(exp, `No expectations defined for mockType \"${mockType}\"`).to.exist;\r",
+							"});\r",
+							"\r",
+							"if (exp) {\r",
+							"    pm.test(`Status code matches expected for \"${mockType}\"`, () => {\r",
+							"        pm.response.to.have.status(exp.status);\r",
+							"    });\r",
+							"\r",
+							"    pm.test(`Body content matches expected for \"${mockType}\"`, () => {\r",
+							"        exp.bodyCheck(jsonGET);\r",
+							"    });\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-mock-response-name",
+						"value": "{{mockType}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseURL}}/accounts",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"accounts"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "success",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-mock-response-name",
+								"value": "{{mockType}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/accounts",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"accounts"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "",
+					"header": [],
+					"cookie": [
+						{
+							"expires": "Invalid Date"
+						}
+					],
+					"body": "{\r\n  \"accountNumber\": \"12345678\",\r\n  \"balance\": 5000.25,\r\n  \"type\": \"Savings\",\r\n  \"status\": \"Active\",\r\n  \"transactionId\": \"tx1001\",\r\n}\r\n"
+				},
+				{
+					"name": "invalid_account",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-mock-response-name",
+								"value": "{{mockType}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/accounts",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"accounts"
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "",
+					"header": [],
+					"cookie": [
+						{
+							"expires": "Invalid Date"
+						}
+					],
+					"body": "{\r\n  \"error\": \"Account not found\",\r\n  \"code\": \"ERR_ACC_404\"\r\n}\r\n"
+				},
+				{
+					"name": "insufficient_balance",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-mock-response-name",
+								"value": "{{mockType}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/accounts",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"accounts"
+							]
+						}
+					},
+					"status": "Payment Required",
+					"code": 402,
+					"_postman_previewlanguage": "",
+					"header": [],
+					"cookie": [
+						{
+							"expires": "Invalid Date"
+						}
+					],
+					"body": "{\r\n  \"error\": \"Insufficient balance\",\r\n  \"availableBalance\": 12.50,\r\n  \"code\": \"ERR_BAL_LOW\"\r\n}\r\n"
+				},
+				{
+					"name": "limit_exceed",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-mock-response-name",
+								"value": "{{mockType}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/accounts",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"accounts"
+							]
+						}
+					},
+					"status": "Too Many Requests",
+					"code": 429,
+					"_postman_previewlanguage": "",
+					"header": [],
+					"cookie": [
+						{
+							"expires": "Invalid Date"
+						}
+					],
+					"body": "{\r\n  \"error\": \"Rate limit exceeded\",\r\n  \"limit\": 100,\r\n  \"resetIn\": 60,\r\n  \"code\": \"ERR_RATE_LIMIT\"\r\n}\r\n"
+				},
+				{
+					"name": "suspicious",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-mock-response-name",
+								"value": "{{mockType}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/accounts",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"accounts"
+							]
+						}
+					},
+					"status": "Forbidden",
+					"code": 403,
+					"_postman_previewlanguage": "",
+					"header": [],
+					"cookie": [
+						{
+							"expires": "Invalid Date"
+						}
+					],
+					"body": "{\r\n  \"error\": \"Suspicious activity detected\",\r\n  \"flagged\": true,\r\n  \"code\": \"ERR_SUSPICIOUS\"\r\n}\r\n"
+				},
+				{
+					"name": "duplicate",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-mock-response-name",
+								"value": "{{mockType}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/accounts",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"accounts"
+							]
+						}
+					},
+					"status": "Conflict",
+					"code": 409,
+					"_postman_previewlanguage": "",
+					"header": [],
+					"cookie": [
+						{
+							"expires": "Invalid Date"
+						}
+					],
+					"body": "{\r\n  \"error\": \"Duplicate request detected\",\r\n  \"code\": \"ERR_DUPLICATE\"\r\n}\r\n"
+				},
+				{
+					"name": "maintenance",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-mock-response-name",
+								"value": "{{mockType}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/accounts",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"accounts"
+							]
+						}
+					},
+					"status": "Service Unavailable",
+					"code": 503,
+					"_postman_previewlanguage": "",
+					"header": [],
+					"cookie": [
+						{
+							"expires": "Invalid Date"
+						}
+					],
+					"body": "{\r\n  \"error\": \"Duplicate request detected\",\r\n  \"code\": \"ERR_DUPLICATE\"\r\n}\r\n"
+				},
+				{
+					"name": "Pending",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-mock-response-name",
+								"value": "{{mockType}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/accounts",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"accounts"
+							]
+						}
+					},
+					"status": "Accepted",
+					"code": 202,
+					"_postman_previewlanguage": "",
+					"header": [],
+					"cookie": [
+						{
+							"expires": "Invalid Date"
+						}
+					],
+					"body": "{\r\n  \"error\": \"Request pending\",\r\n  \"retryAfter\": 30,\r\n  \"code\": \"ERR_TIMEOUT\",\r\n  \"transactionId\": \"tx_queued_123\",\r\n}\r\n"
+				},
+				{
+					"name": "validation_error",
+					"originalRequest": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-mock-response-name",
+								"value": "{{mockType}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseURL}}/accounts",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"accounts"
+							]
+						}
+					},
+					"status": "Unprocessable Content",
+					"code": 422,
+					"_postman_previewlanguage": "",
+					"header": [],
+					"cookie": [
+						{
+							"expires": "Invalid Date"
+						}
+					],
+					"body": "{\r\n  \"error\": \"Invalid request format\",\r\n  \"expectedAccountNumber\": \"should have 8 digits\",\r\n  \"code\": \"ERR_FORMAT\"\r\n}\r\n"
+				}
+			]
+		},
+		{
+			"name": "transaction",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// ========== POST Transaction Tests ==========\r",
+							"/*\r",
+							"Placement:\r",
+							"- Open your POST transaction request (e.g., POST /transactions).\r",
+							"- Click the Tests tab.\r",
+							"- Paste this entire block. Keep any content-type checks above Step 3 if you already have them.\r",
+							"*/\r",
+							"\r",
+							"// Step 1: Resolve mockType (transactions use the same CSV column)\r",
+							"const mockType = pm.environment.get(\"mockType\") || pm.iterationData.get(\"mockType\");\r",
+							"\r",
+							"// Step 2: Allowed status codes (broad safety net)\r",
+							"pm.test(\"Status code is allowed for this scenario (POST)\", () => {\r",
+							"  const allowed = [200, 202, 400, 401, 403, 404, 409, 422, 429, 500, 503];\r",
+							"  pm.expect(pm.response.code).to.be.oneOf(allowed);\r",
+							"});\r",
+							"\r",
+							"// Step 3: Content-Type sanity check\r",
+							"pm.test(\"Content-Type is valid (POST)\", () => {\r",
+							"  const contentType = pm.response.headers.get(\"Content-Type\") || \"\";\r",
+							"  const allowedTypes = [\"application/json\", \"text/html\"];\r",
+							"  pm.expect(allowedTypes.some(t => contentType.includes(t)), `Unexpected Content-Type: ${contentType}`).to.be.true;\r",
+							"});\r",
+							"\r",
+							"// Step 4: Parse JSON safely once\r",
+							"let jsonPOST = {};\r",
+							"try {\r",
+							"  jsonPOST = pm.response.json();\r",
+							"  pm.test(\"Response is valid JSON (POST)\", () => pm.expect(jsonPOST).to.be.an(\"object\"));\r",
+							"} catch (e) {\r",
+							"  pm.test(\"Response is valid JSON (POST)\", () => pm.expect.fail(\"Invalid JSON\"));\r",
+							"}\r",
+							"\r",
+							"// Step 5: Exact status code per mockType (POST)\r",
+							"const statusByTypePOST = {\r",
+							"  success: 200,\r",
+							"  Pending: 202,\r",
+							"  invalid_account: 404,\r",
+							"  insufficient_balance: 402,\r",
+							"  validation_error: 422,\r",
+							"  suspicious: 403,\r",
+							"  maintenance: 503,\r",
+							"  duplicate: 409,\r",
+							"  limit_exceed: 429,\r",
+							"  bad_request: 400,\r",
+							"  server_error: 500,\r",
+							"  forbidden: 403,\r",
+							"  not_found: 404\r",
+							"};\r",
+							"\r",
+							"pm.test(`Status code matches mockType (POST): ${mockType}`, () => {\r",
+							"  const expected = statusByTypePOST[mockType];\r",
+							"  pm.expect(expected, `No expected status mapping for mockType '${mockType}' in POST`).to.exist;\r",
+							"  pm.response.to.have.status(expected);\r",
+							"});\r",
+							"\r",
+							"// Step 6: Body validations per mockType (POST)\r",
+							"pm.test(`Body matches mockType (POST): ${mockType}`, () => {\r",
+							"  if (mockType === \"success\") {\r",
+							"    // Success transaction structure — tune to your response schema\r",
+							"    pm.expect(jsonPOST).to.have.property(\"transactionId\");\r",
+							"    pm.expect(jsonPOST).to.have.property(\"status\").that.matches(/success|completed/i);\r",
+							"    pm.expect(jsonPOST).to.have.property(\"amount\");\r",
+							"    pm.expect(jsonPOST).to.have.property(\"message\");\r",
+							"    return;\r",
+							"  }\r",
+							"\r",
+							"  if (mockType === \"Pending\") {\r",
+							"    pm.expect(jsonPOST).to.have.property(\"transactionId\");\r",
+							"    pm.expect(jsonPOST).to.have.property(\"status\").that.matches(/pending|processing/i);\r",
+							"    pm.expect(jsonPOST).to.have.property(\"message\");\r",
+							"    pm.expect(jsonPOST).to.have.property(\"estimatedCompletion\");\r",
+							"    return;\r",
+							"  }\r",
+							"\r",
+							"  if (mockType === \"limit_exceed\") {\r",
+							"    // As per your provided POST limit_exceed example\r",
+							"    pm.expect(jsonPOST).to.have.property(\"status\", \"failed\");\r",
+							"    pm.expect(jsonPOST).to.have.property(\"code\", \"limit_exceeded\");\r",
+							"    pm.expect(jsonPOST).to.have.property(\"message\").that.includes(\"Daily transfer limit reached\");\r",
+							"    pm.expect(jsonPOST).to.have.property(\"remainingDailyLimit\").that.is.a(\"number\");\r",
+							"    return;\r",
+							"  }\r",
+							"\r",
+							"  // Generic error envelopes for other POST errors — tune messages to your examples\r",
+							"  const expectedErrorChecks = {\r",
+							"    invalid_account: obj => {\r",
+							"      pm.expect(obj).to.have.property(\"error\").that.match(/account not found/i);\r",
+							"    },\r",
+							"    insufficient_balance: obj => {\r",
+							"      pm.expect(obj).to.have.property(\"error\").that.match(/insufficient balance/i);\r",
+							"    },\r",
+							"    validation_error: obj => {\r",
+							"      pm.expect(obj).to.have.property(\"error\").that.match(/validation/i);\r",
+							"    },\r",
+							"    suspicious: obj => {\r",
+							"      pm.expect(obj).to.have.property(\"error\").that.match(/suspicious/i);\r",
+							"    },\r",
+							"    maintenance: obj => {\r",
+							"      pm.expect(obj).to.have.property(\"error\").that.match(/maintenance/i);\r",
+							"    },\r",
+							"    duplicate: obj => {\r",
+							"      pm.expect(obj).to.have.property(\"error\").that.match(/duplicate/i);\r",
+							"    },\r",
+							"        bad_request: obj => {\r",
+							"      pm.expect(obj).to.have.property(\"error\").that.match(/bad request/i);\r",
+							"    },\r",
+							"    server_error: obj => {\r",
+							"      pm.expect(obj).to.have.property(\"error\").that.match(/internal server error|unexpected/i);\r",
+							"    },\r",
+							"    forbidden: obj => {\r",
+							"      pm.expect(obj).to.have.property(\"error\").that.match(/forbidden/i);\r",
+							"    },\r",
+							"    not_found: obj => {\r",
+							"      pm.expect(obj).to.have.property(\"error\").that.match(/not found/i);\r",
+							"    }\r",
+							"  };\r",
+							"\r",
+							"  const check = expectedErrorChecks[mockType];\r",
+							"  pm.expect(check, `No body assertion defined for mockType '${mockType}' in POST`).to.exist;\r",
+							"  check(jsonPOST);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Get current iteration index and set mockType accordingly\r",
+							"const scenarios = [\"success\", \"invalid_account\", \"limit_exceed\", \"insufficient_balance\", \"duplicate\", \"suspicious\", \"maintenance\", \"Pending\", \"validation_error\"];\r",
+							"const index = pm.info.iteration;\r",
+							"\r",
+							"pm.environment.set(\"mockType\", scenarios[index % scenarios.length]);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-mock-response-name",
+						"value": "{{mockType}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"fromAccount\": \"{{fromAccount}}\",\r\n    \"toAccount\": \"{{toAccount}}\",\r\n    \"amount\": \"{{amount}}\",\r\n    \"transactionType\": \"{{transactionType}}\",\r\n    \"dailyTransferred\": \"{{dailyTransferred}}\",\r\n    \"geoLocation\": \"{{geoLocation}}\",\r\n    \"deviceId\": \"{{deviceId}}\",\r\n    \"requestedAt\": \"{{requestedAt}}\",\r\n    \"mockType\": \"{{mockType}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/transactions",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"transactions"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "success",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"fromAccount\": \"1010\",\r\n  \"toAccount\": \"2020\",\r\n  \"amount\": 100,\r\n  \"transactionType\": \"transfer\",\r\n  \"dailyTransferred\": \"500\",\r\n  \"geoLocation\": \"US\",\r\n  \"deviceId\": \"device-A\",\r\n  \"requestedAt\": \"2025-08-12T10:00:00Z\",\r\n  \"mockType\": \"success\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/transactions?scenario=success",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "scenario",
+									"value": "success"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "",
+					"header": [],
+					"cookie": [
+						{
+							"expires": "Invalid Date"
+						}
+					],
+					"body": "{\r\n  \"transactionId\": \"tx1001\",\r\n  \"status\": \"success\",\r\n  \"amount\": 100,\r\n  \"message\": \"100 transferred successfully from 12345678 to 87654321\"\r\n}\r\n"
+				},
+				{
+					"name": "invalid_account",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"fromAccount\": \"1515\",\r\n  \"toAccount\": \"3030\",\r\n  \"amount\": 200,\r\n  \"transactionType\": \"withdrawal\",\r\n  \"dailyTransferred\": \"400\",\r\n  \"geoLocation\": \"US\",\r\n  \"deviceId\": \"device-W\",\r\n  \"requestedAt\": \"2025-08-12T09:00:00Z\",\r\n  \"mockType\": \"invalid_account\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/transactions?scenario=invalid_account",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "scenario",
+									"value": "invalid_account"
+								}
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": "{\r\n  \"error\": \"Account not found\",\r\n  \"code\": \"ERR_ACC_404\",\r\n  \"message\": \"Invalid account number: 1515\",\r\n  \"transactionId\": null\r\n}\r\n\r\n"
+				},
+				{
+					"name": "insufficient_balance",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"fromAccount\": \"1616\",\r\n  \"toAccount\": \"3232\",\r\n  \"amount\": 10,\r\n  \"transactionType\": \"payment\",\r\n  \"dailyTransferred\": \"90\",\r\n  \"geoLocation\": \"US\",\r\n  \"deviceId\": \"device-Q\",\r\n  \"requestedAt\": \"2025-08-12T06:30:00Z\",\r\n  \"mockType\": \"insufficient_balance\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/transactions?scenario=insufficient_balance",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "scenario",
+									"value": "insufficient_balance"
+								}
+							]
+						}
+					},
+					"status": "Payment Required",
+					"code": 402,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": "{\r\n  \"transactionId\": \"tx1002\",\r\n  \"status\": \"failed\",\r\n  \"error\": \"Insufficient balance\",\r\n  \"message\": \"Insufficient balance in account 1616\"\r\n}"
+				},
+				{
+					"name": "limit_exceed",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"fromAccount\": \"1111\",\r\n  \"toAccount\": \"2222\",\r\n  \"amount\": 99999.99,\r\n  \"transactionType\": \"transfer\",\r\n  \"dailyTransferred\": \"120000\",\r\n  \"geoLocation\": \"US\",\r\n  \"deviceId\": \"device-A\",\r\n  \"requestedAt\": \"2025-08-12T10:00:00Z\",\r\n  \"mockType\": \"limit_exceed\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/transactions?scenario=limit_exceed",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "scenario",
+									"value": "limit_exceed"
+								}
+							]
+						}
+					},
+					"status": "Too Many Requests",
+					"code": 429,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": "{\r\n  \"status\": \"failed\",\r\n  \"code\": \"limit_exceeded\",\r\n  \"error\": \"Rate limit exceeded\",\r\n  \"message\": \"Daily transfer limit reached. Try again after your limit resets.\",\r\n  \"remainingDailyLimit\": 0\r\n}\r\n"
+				},
+				{
+					"name": "suspicious",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"fromAccount\": \"1234\",\r\n  \"toAccount\": \"2345\",\r\n  \"amount\": 250,\r\n  \"transactionType\": \"payment\",\r\n  \"dailyTransferred\": \"1500\",\r\n  \"geoLocation\": \"IN\",\r\n  \"deviceId\": \"device-X\",\r\n  \"requestedAt\": \"2025-08-12T03:00:00Z\",\r\n  \"mockType\": \"suspicious\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/transactions?scenario=suspicious",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "scenario",
+									"value": "suspicious"
+								}
+							]
+						}
+					},
+					"status": "Forbidden",
+					"code": 403,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": "{\r\n  \"status\": \"blocked\",\r\n  \"error\": \"Suspicious activity detected\",\r\n  \"code\": \"suspicious_activity\",\r\n  \"message\": \"Transaction flagged for review.\",\r\n  \"reviewId\": \"rev_9012\"\r\n}"
+				},
+				{
+					"name": "duplicate",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"fromAccount\": \"1010\",\r\n  \"toAccount\": \"2020\",\r\n  \"amount\": 20,\r\n  \"transactionType\": \"transfer\",\r\n  \"dailyTransferred\": \"50\",\r\n  \"geoLocation\": \"US\",\r\n  \"deviceId\": \"device-A\",\r\n  \"requestedAt\": \"2025-08-12T10:00:00Z\",\r\n  \"mockType\": \"duplicate\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/transactions?scenario=duplicate",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "scenario",
+									"value": "duplicate"
+								}
+							]
+						}
+					},
+					"status": "Conflict",
+					"code": 409,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": "{\r\n  \"error\": \"Duplicate request detected\",\r\n  \"code\": \"duplicate_transaction\",\r\n  \"message\": \"An identical transaction was already processed.\",\r\n  \"originalTransactionId\": \"tx1001\"\r\n}\r\n"
+				},
+				{
+					"name": "maintenance",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"fromAccount\": \"1357\",\r\n  \"toAccount\": \"2468\",\r\n  \"amount\": 300,\r\n  \"transactionType\": \"withdrawal\",\r\n  \"dailyTransferred\": \"800\",\r\n  \"geoLocation\": \"US\",\r\n  \"deviceId\": \"device-Z\",\r\n  \"requestedAt\": \"2025-08-12T02:00:00Z\",\r\n  \"mockType\": \"maintenance\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/transactions?scenario=maintenance",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "scenario",
+									"value": "maintenance"
+								}
+							]
+						}
+					},
+					"status": "Service Unavailable",
+					"code": 503,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "",
+							"value": "",
+							"description": "",
+							"type": "text"
+						}
+					],
+					"cookie": [],
+					"body": "{\r\n  \"status\": \"unavailable\",\r\n  \"error\": \"Duplicate request detected\",\r\n  \"code\": \"ERR_DUPLICATE\",\r\n  \"message\": \"Service temporarily unavailable due to maintenance. Please retry later.\"\r\n}"
+				},
+				{
+					"name": "Pending",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"fromAccount\": \"1414\",\r\n  \"toAccount\": \"2828\",\r\n  \"amount\": 500,\r\n  \"transactionType\": \"payment\",\r\n  \"dailyTransferred\": \"950\",\r\n  \"geoLocation\": \"UK\",\r\n  \"deviceId\": \"device-Y\",\r\n  \"requestedAt\": \"2025-08-12T12:45:00Z\",\r\n  \"mockType\": \"Pending\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/transactions?scenario=pending",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "scenario",
+									"value": "pending"
+								}
+							]
+						}
+					},
+					"status": "Accepted",
+					"code": 202,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": "{\r\n  \"transactionId\": \"tx_queued_123\",\r\n  \"status\": \"Pending\",\r\n  \"message\": \"Transaction received and queued for processing.\",\r\n  \"estimatedCompletion\": \"2025-08-11T12:30:00Z\"\r\n  \"error\": \"Request pending\",\r\n    \"code\": \"ERR_TIMEOUT\"\r\n}\r\n"
+				},
+				{
+					"name": "validation_error",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"fromAccount\": \"1717\",\r\n  \"toAccount\": \"3434\",\r\n  \"amount\": 700,\r\n  \"transactionType\": \"transfer\",\r\n  \"dailyTransferred\": \"9999\",\r\n  \"geoLocation\": \"US\",\r\n  \"deviceId\": \"device-B\",\r\n  \"requestedAt\": \"2025-08-12T10:15:00Z\",\r\n  \"mockType\": \"validation_error\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseURL}}/transactions?scenario=validation_error",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "scenario",
+									"value": "validation_error"
+								}
+							]
+						}
+					},
+					"status": "Unprocessable Content",
+					"code": 422,
+					"_postman_previewlanguage": null,
+					"header": null,
+					"cookie": [],
+					"body": "{\r\n  \"status\": \"error\",\r\n  \"code\": \"validation_failed\",\r\n  \"message\": \"One or more fields failed validation.\",\r\n  \"errors\": [\r\n    { \"field\": \"fromAccount\", \"message\": \"Account number must be 8 digits.\" },\r\n    { \"field\": \"amount\", \"message\": \"Amount must be greater than 0.\" }\r\n  ]\r\n}\r\n"
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": "https://ed2fa0ac-71e3-4c96-87d2-6972d2d92144.mock.pstmn.io",
+			"type": "default"
+		}
+	]
+}
